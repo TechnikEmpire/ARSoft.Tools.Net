@@ -29,7 +29,7 @@ namespace ARSoft.Tools.Net
 	/// <summary>
 	///   Extension class for the <see cref="IPAddress" /> class
 	/// </summary>
-	public static class IPAddressExtension
+	public static class IPAddressExtensions
 	{
 		/// <summary>
 		///   Reverses the order of the bytes of an IPAddress

@@ -1,111 +1,115 @@
 ﻿#region Copyright and License
+
 // Copyright 2010..2017 Alexander Reinert
-// 
+//
 // This file is part of the ARSoft.Tools.Net - C# DNS client/server and SPF Library (https://github.com/alexreinert/ARSoft.Tools.Net)
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//   http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-#endregion
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed under the License
+// is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// or implied. See the License for the specific language governing permissions and limitations under
+// the License.
+
+#endregion Copyright and License
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ARSoft.Tools.Net.Spf
 {
-	/// <summary>
-	///   Represents a single term of a SPF record
-	/// </summary>
-	public class SpfTerm
-	{
-		private static readonly Regex _parseMechanismRegex = new Regex(@"^(\s)*(?<qualifier>[~+?-]?)(?<type>[a-z0-9]+)(:(?<domain>[^/]+))?(/(?<prefix>[0-9]+)(/(?<prefix6>[0-9]+))?)?(\s)*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		private static readonly Regex _parseModifierRegex = new Regex(@"^(\s)*(?<type>[a-z]+)=(?<domain>[^\s]+)(\s)*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    /// <summary>
+    /// Represents a single term of a SPF record
+    /// </summary>
+    public class SpfTerm
+    {
+        private static readonly Regex _parseMechanismRegex = new Regex(@"^(\s)*(?<qualifier>[~+?-]?)(?<type>[a-z0-9]+)(:(?<domain>[^/]+))?(/(?<prefix>[0-9]+)(/(?<prefix6>[0-9]+))?)?(\s)*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex _parseModifierRegex = new Regex(@"^(\s)*(?<type>[a-z]+)=(?<domain>[^\s]+)(\s)*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-		internal static bool TryParse(string s, out SpfTerm value)
-		{
-			if (String.IsNullOrEmpty(s))
-			{
-				value = null;
-				return false;
-			}
+        internal static bool TryParse(string s, out SpfTerm value)
+        {
+            if (String.IsNullOrEmpty(s))
+            {
+                value = null;
+                return false;
+            }
 
-			#region Parse Mechanism
-			Match match = _parseMechanismRegex.Match(s);
-			if (match.Success)
-			{
-				SpfMechanism mechanism = new SpfMechanism();
+            #region Parse Mechanism
 
-				switch (match.Groups["qualifier"].Value)
-				{
-					case "+":
-						mechanism.Qualifier = SpfQualifier.Pass;
-						break;
-					case "-":
-						mechanism.Qualifier = SpfQualifier.Fail;
-						break;
-					case "~":
-						mechanism.Qualifier = SpfQualifier.SoftFail;
-						break;
-					case "?":
-						mechanism.Qualifier = SpfQualifier.Neutral;
-						break;
+            Match match = _parseMechanismRegex.Match(s);
+            if (match.Success)
+            {
+                SpfMechanism mechanism = new SpfMechanism();
 
-					default:
-						mechanism.Qualifier = SpfQualifier.Pass;
-						break;
-				}
+                switch (match.Groups["qualifier"].Value)
+                {
+                    case "+":
+                        mechanism.Qualifier = SpfQualifier.Pass;
+                        break;
 
-				SpfMechanismType type;
-				mechanism.Type = EnumHelper<SpfMechanismType>.TryParse(match.Groups["type"].Value, true, out type) ? type : SpfMechanismType.Unknown;
+                    case "-":
+                        mechanism.Qualifier = SpfQualifier.Fail;
+                        break;
 
-				mechanism.Domain = match.Groups["domain"].Value;
+                    case "~":
+                        mechanism.Qualifier = SpfQualifier.SoftFail;
+                        break;
 
-				string tmpPrefix = match.Groups["prefix"].Value;
-				int prefix;
-				if (!String.IsNullOrEmpty(tmpPrefix) && Int32.TryParse(tmpPrefix, out prefix))
-				{
-					mechanism.Prefix = prefix;
-				}
+                    case "?":
+                        mechanism.Qualifier = SpfQualifier.Neutral;
+                        break;
 
-				tmpPrefix = match.Groups["prefix6"].Value;
-				if (!String.IsNullOrEmpty(tmpPrefix) && Int32.TryParse(tmpPrefix, out prefix))
-				{
-					mechanism.Prefix6 = prefix;
-				}
+                    default:
+                        mechanism.Qualifier = SpfQualifier.Pass;
+                        break;
+                }
 
-				value = mechanism;
-				return true;
-			}
-			#endregion
+                SpfMechanismType type;
+                mechanism.Type = EnumHelper<SpfMechanismType>.TryParse(match.Groups["type"].Value, true, out type) ? type : SpfMechanismType.Unknown;
 
-			#region Parse Modifier
-			match = _parseModifierRegex.Match(s);
-			if (match.Success)
-			{
-				SpfModifier modifier = new SpfModifier();
+                mechanism.Domain = match.Groups["domain"].Value;
 
-				SpfModifierType type;
-				modifier.Type = EnumHelper<SpfModifierType>.TryParse(match.Groups["type"].Value, true, out type) ? type : SpfModifierType.Unknown;
-				modifier.Domain = match.Groups["domain"].Value;
+                string tmpPrefix = match.Groups["prefix"].Value;
+                int prefix;
+                if (!String.IsNullOrEmpty(tmpPrefix) && Int32.TryParse(tmpPrefix, out prefix))
+                {
+                    mechanism.Prefix = prefix;
+                }
 
-				value = modifier;
-				return true;
-			}
-			#endregion
+                tmpPrefix = match.Groups["prefix6"].Value;
+                if (!String.IsNullOrEmpty(tmpPrefix) && Int32.TryParse(tmpPrefix, out prefix))
+                {
+                    mechanism.Prefix6 = prefix;
+                }
 
-			value = null;
-			return false;
-		}
-	}
+                value = mechanism;
+                return true;
+            }
+
+            #endregion Parse Mechanism
+
+            #region Parse Modifier
+
+            match = _parseModifierRegex.Match(s);
+            if (match.Success)
+            {
+                SpfModifier modifier = new SpfModifier();
+
+                SpfModifierType type;
+                modifier.Type = EnumHelper<SpfModifierType>.TryParse(match.Groups["type"].Value, true, out type) ? type : SpfModifierType.Unknown;
+                modifier.Domain = match.Groups["domain"].Value;
+
+                value = modifier;
+                return true;
+            }
+
+            #endregion Parse Modifier
+
+            value = null;
+            return false;
+        }
+    }
 }
